@@ -1,48 +1,47 @@
 @echo off
-chcp 65001 > nul
 title SMS Spam Detection System - CNN + SVM
 
 echo ==========================================================
-echo    HỆ THỐNG PHÁT HIỆN SMS SPAM - MÔ HÌNH LAI CNN + SVM
+echo    HE THONG PHAT HIEN SMS SPAM - MO HINH LAI CNN + SVM
 echo ==========================================================
 echo.
 
-:: Kiểm tra sự tồn tại của thư mục .venv
+:: Kiem tra su ton tai cua thu muc .venv
 if not exist .venv (
-    echo [HỆ THỐNG] Không tìm thấy môi trường ảo .venv. Tiến hành khởi tạo...
+    echo [SYSTEM] Khong tim thay moi truong ao .venv. Tien hanh khoi tao...
     python -m venv .venv
     if errorlevel 1 (
-        echo [LỖI] Tạo môi trường ảo thất bại. Hãy chắc chắn rằng bạn đã cài đặt Python 3.8+.
+        echo [ERROR] Tao moi truong ao that bai. Hay chac chan rang ban da cai dat Python 3.8+.
         pause
         exit /b 1
     )
     
-    echo [HỆ THỐNG] Khởi tạo môi trường ảo thành công.
-    echo [HỆ THỐNG] Đang kích hoạt môi trường ảo và cài đặt các thư viện cần thiết...
+    echo [SYSTEM] Khoi tao moi truong ao thanh cong.
+    echo [SYSTEM] Dang kich hoat moi truong ao va cai dat thu vien...
     call .venv\Scripts\activate
     
     python -m pip install --upgrade pip
     pip install -r requirements.txt
     if errorlevel 1 (
-        echo [LỖI] Cài đặt các thư viện cần thiết thất bại.
+        echo [ERROR] Cai dat cac thu vien that bai.
         pause
         exit /b 1
     )
-    echo [HỆ THỐNG] Cài đặt thư viện hoàn tất.
+    echo [SYSTEM] Cai dat thu vien hoan tat.
 ) else (
-    echo [HỆ THỐNG] Đang kích hoạt môi trường ảo có sẵn...
+    echo [SYSTEM] Dang kich hoat moi truong ao co san...
     call .venv\Scripts\activate
 )
 
 echo.
-echo [HỆ THỐNG] Đang khởi chạy Máy chủ Web (Flask)...
-echo [HỆ THỐNG] Trình duyệt sẽ tự động mở liên kết http://127.0.0.1:5000 sau vài giây...
+echo [SYSTEM] Dang khoi chay May chu Web (Flask)...
+echo [SYSTEM] Trinh duyet se tu dong mo lien ket http://127.0.0.1:5000 sau vai giay...
 echo.
 
-:: Mở trình duyệt mặc định
+:: Mo trinh duyet mac dinh
 start "" "http://127.0.0.1:5000"
 
-:: Chạy ứng dụng Flask
+:: Chay ung dung Flask
 python src/app.py
 
 pause
