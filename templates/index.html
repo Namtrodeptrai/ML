@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Phát hiện SMS Spam - CNN + SVM</title>
+    <!-- Google Fonts Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #08090f;
+            --card-bg: rgba(17, 18, 30, 0.45);
+            --card-border: rgba(255, 255, 255, 0.07);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --ham-color: #10b981;
+            --ham-glow: rgba(16, 185, 129, 0.2);
+            --spam-color: #f43f5e;
+            --spam-glow: rgba(244, 63, 94, 0.2);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #161530 0%, var(--bg-color) 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            z-index: 10;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        header h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #a5b4fc 0%, #e9d5ff 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            font-weight: 300;
+        }
+
+        /* Glassmorphism Card */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 35px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #c084fc;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        textarea {
+            width: 100%;
+            height: 140px;
+            background: rgba(8, 9, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 18px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        textarea:focus {
+            border-color: #a855f7;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+            background: rgba(8, 9, 15, 0.8);
+        }
+
+        textarea::placeholder {
+            color: #4b5563;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 16px;
+            padding: 16px 24px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.35);
+            filter: brightness(1.15);
+        }
+
+        .btn-submit:active {
+            transform: translateY(1px);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Result Area */
+        .result-container {
+            margin-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 30px;
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .badge {
+            padding: 8px 18px;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .badge-ham {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--ham-color);
+            color: var(--ham-color);
+            box-shadow: 0 0 12px var(--ham-glow);
+        }
+
+        .badge-spam {
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid var(--spam-color);
+            color: var(--spam-color);
+            box-shadow: 0 0 12px var(--spam-glow);
+        }
+
+        .prob-section {
+            background: rgba(8, 9, 15, 0.4);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            margin-bottom: 18px;
+        }
+
+        .prob-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: var(--text-muted);
+        }
+
+        .prob-value {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 99px;
+            transition: width 0.8s cubic-bezier(0.1, 0.8, 0.3, 1), background-color 0.8s ease;
+        }
+
+        .details-section {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 3px solid #818cf8;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 35px;
+            font-size: 0.8rem;
+            color: #4b5563;
+            text-align: center;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Hệ thống Phát hiện SMS Spam</h1>
+            <p>Kiến trúc học sâu lai giữa mạng CNN và thuật toán SVM</p>
+        </header>
+
+        <main class="card">
+            <div class="form-group">
+                <label for="smsText">Nội dung tin nhắn cần phân loại</label>
+                <textarea id="smsText" placeholder="Nhập hoặc dán nội dung SMS tại đây để hệ thống phân tích..."></textarea>
+            </div>
+
+            <button class="btn-submit" id="btnSubmit">
+                <span class="spinner" id="spinner"></span>
+                <span id="btnText">Phân loại Tin nhắn</span>
+            </button>
+
+            <!-- Khối kết quả phân tích -->
+            <div class="result-container" id="resultContainer">
+                <div class="result-header">
+                    <span class="result-title">Kết quả phân tích:</span>
+                    <span class="badge" id="badgeResult">-</span>
+                </div>
+
+                <div class="prob-section">
+                    <div class="prob-label">
+                        <span>Xác suất là Spam:</span>
+                        <span class="prob-value" id="probValue">0.00%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+
+                <div class="details-section">
+                    <p id="cleanedTextDisplay"></p>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            Dự án Học máy nâng cao © 2026 - Phát hiện Spam sử dụng CNN-SVM
+        </footer>
+    </div>
+
+    <script>
+        const btnSubmit = document.getElementById('btnSubmit');
+        const spinner = document.getElementById('spinner');
+        const btnText = document.getElementById('btnText');
+        const resultContainer = document.getElementById('resultContainer');
+        const badgeResult = document.getElementById('badgeResult');
+        const probValue = document.getElementById('probValue');
+        const progressBarFill = document.getElementById('progressBarFill');
+        const cleanedTextDisplay = document.getElementById('cleanedTextDisplay');
+        const smsText = document.getElementById('smsText');
+
+        btnSubmit.addEventListener('click', async () => {
+            const textValue = smsText.value.trim();
+            if (!textValue) {
+                alert('Vui lòng nhập nội dung tin nhắn cần kiểm tra!');
+                return;
+            }
+
+            // Hiển thị loading spinner
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Đang phân tích...';
+            btnSubmit.disabled = true;
+            resultContainer.style.display = 'none';
+            progressBarFill.style.width = '0%';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: textValue })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Lỗi khi gọi API');
+                }
+
+                const data = await response.json();
+
+                // Cập nhật kết quả phân loại
+                if (data.label === 'SPAM') {
+                    badgeResult.className = 'badge badge-spam';
+                    badgeResult.textContent = 'SPAM (Tin rác)';
+                    progressBarFill.style.backgroundColor = 'var(--spam-color)';
+                    progressBarFill.style.boxShadow = '0 0 10px var(--spam-glow)';
+                } else {
+                    badgeResult.className = 'badge badge-ham';
+                    badgeResult.textContent = 'HAM (Tin thường)';
+                    progressBarFill.style.backgroundColor = 'var(--ham-color)';
+                    progressBarFill.style.boxShadow = '0 0 10px var(--ham-glow)';
+                }
+
+                // Tính xác suất và cập nhật thanh tiến trình
+                const spamPercentage = (data.spam_probability * 100).toFixed(2);
+                probValue.textContent = `${spamPercentage}%`;
+                
+                // Trực quan hóa tiến trình
+                setTimeout(() => {
+                    progressBarFill.style.width = `${spamPercentage}%`;
+                }, 100);
+
+                cleanedTextDisplay.innerHTML = `<strong>Văn bản sau làm sạch (đưa vào mô hình):</strong> <br><em>"${data.cleaned_text || '(Trống sau lọc stop words)'}"</em>`;
+                
+                // Hiển thị vùng kết quả
+                resultContainer.style.display = 'block';
+
+            } catch (error) {
+                console.error(error);
+                alert('Không thể kết nối hoặc xảy ra lỗi ở máy chủ xử lý!');
+            } finally {
+                // Tắt loading
+                spinner.style.display = 'none';
+                btnText.textContent = 'Phân loại Tin nhắn';
+                btnSubmit.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

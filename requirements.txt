@@ -1,0 +1,11 @@
+# Thư viện cần cài đặt cho dự án
+numpy
+pandas
+scikit-learn
+tensorflow
+pyyaml
+nltk
+matplotlib
+seaborn
+pytest
+flask

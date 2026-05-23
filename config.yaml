@@ -1,0 +1,35 @@
+# Đường dẫn lưu trữ dữ liệu và mô hình
+paths:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  split_dir: "data/split"
+  raw_filepath: "data/raw/SMSSpamCollection"
+  models_dir: "models"
+  cnn_weights_path: "models/cnn_weights.weights.h5"
+  svm_model_path: "models/svm_model.pkl"
+  tokenizer_path: "models/tokenizer.pkl"
+
+# Tiền xử lý dữ liệu
+preprocessing:
+  vocab_size: 5000
+  max_len: 80
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+
+# Siêu tham số cho mô hình CNN
+cnn:
+  embedding_dim: 100
+  num_filters: 128
+  kernel_size: 5
+  dense_units: 64
+  batch_size: 64
+  epochs: 10
+  dropout_rate: 0.5
+  learning_rate: 0.001
+
+# Siêu tham số cho SVM
+svm:
+  C: 1.0
+  kernel: "rbf"
+  gamma: "scale"
