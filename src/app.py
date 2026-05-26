@@ -15,6 +15,7 @@ logger = get_logger("app_server")
 
 # Cấu hình thư mục templates tĩnh cho giao diện web
 app = Flask(__name__, template_folder="../templates")
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # Khai báo các mô hình học máy toàn cục (Singleton)
 tokenizer = None
